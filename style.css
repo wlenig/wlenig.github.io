@@ -17,7 +17,7 @@ html {
 }
 
 body {
-    font-family: 'Fragment Mono';
+    font-family: 'Fragment Mono', 'Courier', monospace;
     font-size: 1.5em;
     padding: 1em;
 }
