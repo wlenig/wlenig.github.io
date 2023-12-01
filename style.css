@@ -48,9 +48,13 @@ p {
     box-sizing: border-box;
 
     margin-bottom: 1em;
-    background-color: white;
+    /* background-color: white; */
 
-    background-blend-mode: difference;
+    backdrop-filter: brightness(350%) blur(8px);
+}
+
+.main-container {
+    /* margin: 0 auto; */
 }
 
 @media (min-width: 1024px) {
@@ -103,12 +107,6 @@ h2 {
 
 #name:hover { 
     text-decoration: none;
-}
-
-#header {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
 }
 
 .float-left {
