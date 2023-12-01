@@ -3,15 +3,37 @@
 <head>
   <title>Willem's Portfolio</title>
   
-  <link href="style.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Fragment%20Mono">
 </head>
 <body>
+  <h2><a href="/">Willem</a>'s Portfolio</h2>
+
+  <div class="project">
+    <div class="header links">
+      <h1>reversi</h1>
+      <div class="actions">
+        <a href="https://github.com/smore007/reversi">[ repo ]</a>
+      </div>
+    </div>
+
+    <p>
+      A hexagonal version of the classic game Reversi.
+      <ul>
+        <li><p>Written in Java with extensibility in mind</p></li>
+        <li><p>Uses object-oriented design patterns, such as MVC</p></li>
+        <li><p>Features a CPU opponent which employs a minimax strategy</a></p></li>
+      </ul>
+    </p>
+    <img src="img/reversi.png">
+  </div>
+
   <div class="project">
     <div class="header links">
       <h1>nade.pro</h1>
       <div class="actions">
         <a href="https://github.com/smore007/nadepro">[ repo ]</a>
-        <a href="/">[ demo ]</a>
+        <a href="demos/nadepro.html">[ demo ]</a>
       </div>
     </div>
 
@@ -20,7 +42,7 @@
       <ul>
         <li><p>Works by reading <a href="https://developer.valvesoftware.com/wiki/DEM_(file_format)" target="_blank">Valve demo files</a></p></li>
         <li><p>Webserver runs on Flask with a REST API</p></li>
-        <li><p>Uses jQuery on the front-end</a></p></li>
+        <li><p>Utilizes jQuery on the front-end</a></p></li>
       </ul>
     </p>
     <img src="img/nadepro.png">
@@ -30,15 +52,14 @@
     <div class="header links">
       <h1>decayboard</h1>
       <div class="actions">
-        <a href="/">[ repo ]</a>
-        <a href="/">[ demo ]</a>
+        <a href="https://github.com/smore007/decayboard">[ repo ]</a>
       </div>
     </div>
 
     <p>
       An anonymous an ephemeral internet bulletin board
       <ul>
-        <li><p>Features an administrator panel with moderation features</p></li>
+        <li><p>Features an administrator panel with moderation capabilities</p></li>
         <li><p>Uses Flask and SQLAlchemy under the hood</p></li>
       </ul>
     </p>
@@ -52,9 +73,12 @@
 
     <p>
       <ul>
-        <li><p>Written from scratch</p></li>
-        <li><p>Responsive</p></li>
+        <li><p>Written from scratch, with love <3</p></li>
       </ul>
     </p>
+  </div>
+  <div class="project">
+    <p>Note: Some repositories are private, although I am happy to share source code upon request.</p>
+  </div>
 </body>
 </html>

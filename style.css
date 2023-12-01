@@ -2,6 +2,7 @@
 
 html {
     min-height: 100%;
+    min-width: 100%;
 
     background-image: url('img/horizon.jpg');
     background-color: rgb(216,216,216,255);
@@ -11,14 +12,18 @@ html {
     background-attachment: fixed;
 }
 
-body {
-    font-family: 'courier';
+.landing {
     font-size: 4vh;
+}
+
+body {
+    font-family: 'Fragment Mono';
+    font-size: 1.5em;
     padding: 1em;
 }
 
 p {
-    font-size: .8em;
+    /* font-size: .8em; */
 }
 
 .links li { 
@@ -43,22 +48,29 @@ p {
     box-sizing: border-box;
 
     margin-bottom: 1em;
-
-    width: 100%;
-    max-width: 650px;
-
     background-color: white;
 }
 
+@media (min-width: 1024px) {
+    .project {
+        max-width: 650px;
+    }
+}
+
+h2 {
+    margin-top: 0;
+}
 
 .project h1 {
+    
+
     margin-top: 0;
-    margin-bottom: .25em;
+    margin-bottom: .5em;
 }
 
 .project li p {
-    margin-top: 0;
-    margin-bottom: 0;
+    margin-top: .5em;
+    margin-bottom: .5em;
 }
 
 .project img {
