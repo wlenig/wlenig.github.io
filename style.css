@@ -94,3 +94,11 @@ h2 {
 .project p {
     clear: both;
 }
+
+#name:link, #name:visited { 
+    color: black; 
+}
+
+#name:hover { 
+    text-decoration: none;
+}
