@@ -49,10 +49,12 @@ p {
 
     margin-bottom: 1em;
     background-color: white;
+
+    background-blend-mode: difference;
 }
 
 @media (min-width: 1024px) {
-    .project {
+    .main-container {
         max-width: 650px;
     }
 }
@@ -101,4 +103,23 @@ h2 {
 
 #name:hover { 
     text-decoration: none;
+}
+
+#header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.float-left {
+    float: left;
+}
+
+.float-right {
+    float: right;
+}
+
+.blended {
+    color: white;
+    mix-blend-mode: difference;
 }
