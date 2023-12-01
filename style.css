@@ -51,6 +51,7 @@ p {
     /* background-color: white; */
 
     backdrop-filter: brightness(350%) blur(8px);
+    -webkit-backdrop-filter: brightness(350%) blur(8px);
 }
 
 .main-container {
