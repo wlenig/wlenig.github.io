@@ -13,7 +13,8 @@ html {
 }
 
 .landing {
-    font-size: 4vh;
+    font-size: 2.25em;
+    mix-blend-mode: multiply;
 }
 
 body {
@@ -61,7 +62,7 @@ p {
     }
 }
 
-@supports (backdrop-filter: brightness(350%) blur(8px)) or (-webkit-backdrop-filter: brightness(350%) blur(8px)) {
+@supports (background-attachment: fixed) and ((backdrop-filter: brightness(350%) blur(8px)) or (-webkit-backdrop-filter: brightness(350%) blur(8px))) {
     .project {
         background: none;
         backdrop-filter: brightness(350%) blur(8px);
