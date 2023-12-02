@@ -6,7 +6,7 @@ html {
 
     background-image: url('img/horizon.jpg');
     background-color: rgb(216,216,216,255);
-    
+
     background-size: cover;
     background-position: bottom;
     background-attachment: fixed;
@@ -26,19 +26,19 @@ p {
     /* font-size: .8em; */
 }
 
-.links li { 
-    list-style-type: none; 
+.links li {
+    list-style-type: none;
 }
 
-.links a { 
-    text-decoration: none; 
+.links a {
+    text-decoration: none;
 }
 
-.links a:link, a:visited { 
-    color: black; 
+.links a:link, a:visited {
+    color: black;
 }
 
-.links a:hover { 
+.links a:hover {
     color: white;
     background-color: black;
 }
@@ -48,10 +48,7 @@ p {
     box-sizing: border-box;
 
     margin-bottom: 1em;
-    /* background-color: white; */
-
-    backdrop-filter: brightness(350%) blur(8px);
-    -webkit-backdrop-filter: brightness(350%) blur(8px);
+    background-color: white;
 }
 
 .main-container {
@@ -64,9 +61,11 @@ p {
     }
 }
 
-@media (max-width: 1024px) {
+@supports (backdrop-filter: brightness(350%) blur(8px)) or (-webkit-backdrop-filter: brightness(350%) blur(8px)) {
     .project {
-        background-color: white;
+        background: none;
+        backdrop-filter: brightness(350%) blur(8px);
+        -webkit-backdrop-filter: brightness(350%) blur(8px);
     }
 }
 
@@ -108,11 +107,11 @@ h2 {
     clear: both;
 }
 
-#name:link, #name:visited { 
-    color: black; 
+#name:link, #name:visited {
+    color: black;
 }
 
-#name:hover { 
+#name:hover {
     text-decoration: none;
 }
 
