@@ -52,6 +52,7 @@ p {
     background-color: white;
 }
 
+
 .main-container {
     /* margin: 0 auto; */
 }
@@ -104,6 +105,8 @@ h2 {
 
     display: flex;
     flex-direction: column;
+
+    text-align: right;
 }
 
 .project p {
@@ -129,4 +132,16 @@ h2 {
 .blended {
     color: white;
     mix-blend-mode: difference;
+}
+
+.request-txt {
+    display: none;
+}
+
+.notavail:hover .request-txt {
+    display: inline;
+}
+
+.notavail:hover .repo-txt {
+    display: none;
 }
