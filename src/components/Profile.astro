@@ -1,6 +1,8 @@
 ---
 import headshot from '../images/headshot.jpg';
 import { Icon } from 'astro-icon/components'
+import { getCollection } from 'astro:content';
+import { formatDate } from '../lib/formatDate'
 
 const badges = [
   {
@@ -30,38 +32,55 @@ const accolades = [
         text: "Northeastern University<br><i>B.S. Computer Science, 2026</i>"
     }
 ]
+
+const blogPosts = await getCollection('blog');
+
 ---
 
 <div class="flex flex-col gap-4">
 
-    <div class="flex gap-4">
-        <div class="max-w-32 aspect-square rounded-3xl overflow-hidden bg-gray-200">
-            <img src={headshot.src} class="w-full h-full object-cover scale-150" />
-        </div>
+    <div class="flex flex-col gap-4">
 
-        <div class="flex flex-col gap-2">
-            <div>
-                <h1 class="text-2xl font-bold">Willem Lenig</h1>
-                <span class="text-gray-600">(will&middot;uhm)</span>
+        <div class="flex gap-4">
+            <div class="max-w-32 aspect-square rounded-3xl overflow-hidden bg-gray-200">
+                <img src={headshot.src} class="w-full h-full object-cover scale-150" />
             </div>
 
-            {accolades.map(accolade => (
-                <div class="flex items-center gap-2">
-                    <Icon name={accolade.icon} class="w-6" />
-                    <span class="text-sm" set:html={accolade.text} />
+            <div class="flex flex-col gap-2">
+                <div>
+                    <h1 class="text-2xl font-bold">Willem Lenig</h1>
+                    <span class="text-gray-600">(will&middot;uhm)</span>
                 </div>
+
+                {accolades.map(accolade => (
+                    <div class="flex items-center gap-2">
+                        <Icon name={accolade.icon} class="w-6" />
+                        <span class="text-sm" set:html={accolade.text} />
+                    </div>
+                ))}
+            </div>
+            
+        </div>
+
+        <div class="flex gap-2">
+            {badges.map(badge => (
+                <a href={badge.href} class="flex gap-1 items-center px-2 py-1 border-2 rounded-full">
+                    <Icon name={badge.icon} class="h-4 w-4" />
+                    <span>{badge.text}</span>
+                </a>
             ))}
         </div>
+
         
     </div>
 
-    <div class="flex gap-2">
-        {badges.map(badge => (
-            <a href={badge.href} class="flex gap-1 items-center px-2 py-1 border-2 rounded-full">
-                <Icon name={badge.icon} class="h-4 w-4" />
-                <span>{badge.text}</span>
-            </a>
+    <ul class="max-w-sm">
+        {blogPosts.map(post => (
+            <li class="flex justify-between">
+                <a href={`/blog/${post.id}`} class="text-pretty mr-2 hover:underline decoration-2">{post.data.title}</a>
+                <span class="text-nowrap text-gray-600">{formatDate(post.data.publishDate)}</span>
+            </li>
         ))}
-    </div>
+    </ul>
 
 </div>
