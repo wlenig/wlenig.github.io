@@ -1,0 +1,67 @@
+---
+import headshot from '../images/headshot.jpg';
+import { Icon } from 'astro-icon/components'
+
+const badges = [
+  {
+    text: "LinkedIn",
+    icon: "mdi:linkedin",
+    href: "https://www.linkedin.com/in/willem-lenig/"
+  },
+  {
+    text: "Github",
+    icon: "mdi:github",
+    href: "https://github.com/wlenig"
+  },
+  {
+    text: "Email",
+    icon: "mdi:email",
+    href: "mailto:lenig.w@northeastern.edu"
+  }
+]
+
+const accolades = [
+    {
+        icon: "fa:home",
+        text: "Boston, MA"
+    },
+    {
+        icon: "fa:graduation-cap",
+        text: "Northeastern University<br><i>B.S. Computer Science, 2026</i>"
+    }
+]
+---
+
+<div class="flex flex-col gap-4">
+
+    <div class="flex gap-4">
+        <div class="max-w-32 aspect-square rounded-3xl overflow-hidden">
+            <img src={headshot.src} class="object-cover scale-150" />
+        </div>
+
+        <div class="flex flex-col gap-2">
+            <div>
+                <h1 class="text-2xl font-bold">Willem Lenig</h1>
+                <span class="text-gray-600">(will&middot;uhm)</span>
+            </div>
+
+            {accolades.map(accolade => (
+                <div class="flex items-center gap-2">
+                    <Icon name={accolade.icon} class="w-6" />
+                    <span class="text-sm" set:html={accolade.text} />
+                </div>
+            ))}
+        </div>
+        
+    </div>
+
+    <div class="flex gap-2">
+        {badges.map(badge => (
+            <a href={badge.href} class="flex gap-1 items-center px-2 py-1 border-2 rounded-full">
+                <Icon name={badge.icon} class="h-4 w-4" />
+                <span>{badge.text}</span>
+            </a>
+        ))}
+    </div>
+
+</div>
