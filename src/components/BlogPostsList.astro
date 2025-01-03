@@ -1,0 +1,15 @@
+---
+import { getCollection } from 'astro:content';
+import { formatDate } from '../lib/formatDate'
+
+const blogPosts = await getCollection('blog');
+---
+
+<ul class="max-w-sm">
+    {blogPosts.map(post => (
+        <li class="flex justify-between">
+            <a href={`/blog/${post.id}`} class="text-pretty mr-2 hover:underline decoration-2">{post.data.title}</a>
+            <span class="text-nowrap text-gray-600">{formatDate(post.data.publishDate)}</span>
+        </li>
+    ))}
+</ul>
