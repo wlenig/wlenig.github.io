@@ -2,7 +2,9 @@
 import { getCollection } from 'astro:content';
 import { formatDate } from '../lib/formatDate'
 
-const blogPosts = await getCollection('blog');
+const blogPosts = await getCollection('blog')
+// sort by recency
+blogPosts.sort((a, b) => b.data.publishDate.valueOf() - a.data.publishDate.valueOf());
 ---
 
 <ul class="max-w-sm">
