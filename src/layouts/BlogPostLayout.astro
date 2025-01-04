@@ -14,8 +14,8 @@ const { frontmatter } = Astro.props;
 				Home
 			</a>
 		</div>
-		<div class="flex flex-col gap-2">
-			<div class="flex items-center justify-between">
+		<div class="flex flex-col gap-4">
+			<div>
 				<h1 class="text-2xl text-pretty">{frontmatter.title}</h1>
 				<span class="text-gray-600 text-nowrap">{formatDate(frontmatter.publishDate)}</span>
 			</div>
