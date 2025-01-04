@@ -7,9 +7,9 @@ const blogPosts = await getCollection('blog')
 blogPosts.sort((a, b) => b.data.publishDate.valueOf() - a.data.publishDate.valueOf());
 ---
 
-<ul class="max-w-sm">
+<ul class="max-w-sm flex flex-col divide-y-2">
     {blogPosts.map(post => (
-        <li class="flex justify-between">
+        <li class="py-2 flex justify-between">
             <a href={`/blog/${post.id}`} class="text-pretty mr-2 hover:underline decoration-2">{post.data.title}</a>
             <span class="text-nowrap text-gray-600">{formatDate(post.data.publishDate)}</span>
         </li>
