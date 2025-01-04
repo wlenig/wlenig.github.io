@@ -1,4 +1,5 @@
 ---
+import { formatDate } from "../lib/formatDate";
 import Layout from "./Layout.astro";
 import { Icon } from "astro-icon/components";
 
@@ -14,7 +15,10 @@ const { frontmatter } = Astro.props;
 			</a>
 		</div>
 		<div class="flex flex-col gap-2">
-			<h1 class="text-2xl">{frontmatter.title}</h1>
+			<div class="flex items-center justify-between">
+				<h1 class="text-2xl">{frontmatter.title}</h1>
+				<span class="text-gray-600">{formatDate(frontmatter.publishDate)}</span>
+			</div>
 			<slot />
 		</div>
 	</div>
