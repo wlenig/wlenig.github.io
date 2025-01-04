@@ -57,7 +57,7 @@ const accolades = [
 
     <div class="flex gap-2">
         {badges.map(badge => (
-            <a href={badge.href} class="flex gap-1 items-center px-2 py-1 border-2 rounded-full">
+            <a href={badge.href} class="flex gap-1 items-center px-2 py-1 border-2 rounded-full active:scale-90 transition-transform">
                 <Icon name={badge.icon} class="h-4 w-4" />
                 <span>{badge.text}</span>
             </a>
