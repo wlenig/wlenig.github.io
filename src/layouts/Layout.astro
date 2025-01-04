@@ -1,6 +1,8 @@
 ---
 import "@fontsource/inter"
 import "@fontsource/inter/700.css"
+
+const { title } = Astro.props;
 ---
 
 <!doctype html>
@@ -8,7 +10,7 @@ import "@fontsource/inter/700.css"
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width" />
-		<title>Willem's Site</title>
+		<title>{title}</title>
 	</head>
 	<body>
 		<slot />
