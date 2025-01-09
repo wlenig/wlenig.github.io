@@ -47,7 +47,7 @@ const accolades = [
 
             {accolades.map(accolade => (
                 <div class="flex items-center gap-2">
-                    <Icon name={accolade.icon} class="w-6" />
+                    <Icon name={accolade.icon} class="min-w-6" />
                     <span class="text-sm" set:html={accolade.text} />
                 </div>
             ))}
