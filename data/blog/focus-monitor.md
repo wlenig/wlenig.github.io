@@ -3,23 +3,23 @@ title: "Monitoring Focus: A Slice of the Windows API"
 publishDate: 2025-01-09T00:00:00-05:00
 ---
 
-> **Note**: This blog post is incomplete, and also acts as a formatting test. So long as this message is here, the post is incomplete!
+> **Note**: The formatting of the blog, more generally, is still incomplete. Please excuse any missing typographic features (such as bullet points) for the time being.
 
-I long dreaded upgrading to Windows 11, but when I got a latest-generation AMD processor this past summer, it become all but required to fully utilize the modern hardware. I am happy to repor that after a few settings and registry tweaks, the Windows 11 experience surpasses that of its predecessor...
+A week ago, focus on my Windows desktop began to spontaneously break: keyboard and mouse inputs would pass through windows straight to the desktop, Explorer would become utter unresponsive, and ocassionally a single process, like Chrome, would become the single interactable component in the system. Interestingly, quickly locking (<kbd>Win</kbd> + <kbd>L</kbd>) and unlocking the desktop would temporarily alleviate the issue.
 
-Until a week ago. With seemingly no change to hardware or software configuration, window focus began to spontaneously break: keyboard and mouse inputs would be sent to the desktop, Explorer would become unresponsive, and, with any luck, a single process, like Chrome, would become the only one interactable. Interestingly, locking and unlocking the Desktop (<kbd>Win</kbd> + <kbd>L</kbd>) would fix the problem, although never for more than a few minutes.
+When looking for a tool to debug the issue, particularly where the global focus was even going, I found someone had already made a [one](https://github.com/MoAlyousef/focusmon) to log changes in focus! Upon reviewing it, though, I was dissapointed to see it worked by constantly polling `GetForegroundWindow`, a method which is both resource intensive and also possibly error prone, as focus switches that happen faster than the polling interval, for example, can not be reliably detected. That was the justification I gave myself, at least, to stop looking for other tools, and sit down and write my own.
 
-After some quick googling, the issue seemed to be common among Windows 11 users. And, even better, someone had already made a [tool](https://github.com/MoAlyousef/focusmon) to log changes in focus! Upon reviewing it, though, I was dissapointed to see it worked by constantly polling `GetForegroundWindow`, a method which is both resource intensive and also possibly error prone; focus switches that happen faster than the polling interval, for example, can not be reliably detected.
+My first thought was to use `SetWindowsHookEx`, and installing a hook to `WndProc`, the function that processes inputs sent to a window. Upon reviewing MSDN, I was pleased to discover there is instead a hook for "computer-based training" applications, a politically correct term for student monitoring software. This hook, `WH_CBT`, is called whenever a window is created, destroyed, focused, or unfocused, and is perfect for this use case.
 
-My first thought was to use `SetWindowsHookEx`, installing a hook to `WndProc`, the function that processes messages sent to a window. Upon reviewing MSDN, I was pleased to discover there is instead a hook for "computer-based training" applications, a politically correct term for student monitoring software. This hook, `WH_CBT`, is called whenever a window is created, destroyed, activated, or deactivated, and is perfect for monitoring focus changes.
-
-Using `SetWindowsHookEx` is rather precarious, as it maps the hooking DLL into the address space of every process in the system, a behavior neither anti-viruses or anti-cheats are fond of. Additionally, the callback itself will be called in the context of the process that triggered the hook, so some inter-process communication mechanism will be required to log anything. Nevertheless, I decided to give it a shot, using a named pipe to communicate.
+I should note: Using `SetWindowsHookEx` is rather precarious, as it maps the hooking DLL into the address space of every process in the system, a behavior neither anti-viruses or anti-cheats are fond of. Additionally, the callback itself gets called in the context of the process that triggered the hook, so some inter-process communication mechanism will be required to log anything. Nevertheless, I decided to give it a shot, using a named pipe to communicate.
 
 The basic control flow of the program should then be:
+```
 1. Create a named pipe instance
 2. Install the hook (only once!)
-3. Accept a client, read the message, close the connection and log it
+3. Accept a client, read and log the message
 4. Repeat from step 1
+```
 
 In C++, this looks like:
 
@@ -142,7 +142,7 @@ struct FocusEvent {
 };
 ```
 
-Moving over to the DLL, or client side, the callback function needs to be defined and exported. Inside it, we check if the hook code is `HCBT_SETFOCUS`, which indicates a window has gained focus, then write the event to the named pipe.
+Moving over to the DLL, or client side, the callback function needs to be defined following the `HOOKPROC` signature, and exported. Inside it, we check if signal code is `HCBT_SETFOCUS`, which indicates a window has gained focus, then write the event to the named pipe. In all cases, we continue the call chain. I should add that it is advised to do as little work inside the callback as possible, however seeing as this is a debugging tool, I found opening and writing to the pipes inside the hook acceptable.
 
 ```cpp
 extern "C" __declspec(dllexport) LRESULT CALLBACK CBTProc(
@@ -161,4 +161,62 @@ extern "C" __declspec(dllexport) LRESULT CALLBACK CBTProc(
 }
 ```
 
-This is where I am stopping for now, since I have to go to class. To be continued
+For opening and writing to the pipe on the client, I define the following convenience functions:
+
+```cpp
+auto pipe_setup()
+{
+    auto pipe = CreateFile(
+        monitor::PIPE_NAME,
+        GENERIC_READ | GENERIC_WRITE,
+        0,
+        NULL,
+        OPEN_EXISTING,
+        0,
+        NULL
+    );
+
+    return pipe;
+}
+
+auto pipe_write(HANDLE pipe, void* msg, size_t size)
+{
+    DWORD written;
+    return WriteFile(
+        pipe,
+        msg,
+        size,
+        &written,
+        NULL
+    );
+}
+
+auto pipe_close(HANDLE pipe)
+{
+    return CloseHandle(pipe);
+}
+```
+
+Then, sending a `FocusEvent` is as simple as filling the struct, and composing with the aforementioned convenience functions. `GetModuleFileName` with a `NULL` first parameter gets the executable file path, while `GetWindowText` gets the title of the focused window.
+
+```cpp
+auto write_event(HWND focused) -> void
+{
+    auto event = monitor::FocusEvent{};
+    GetModuleFileNameA(NULL, event.executable, sizeof(event.executable));
+    GetWindowTextA(focused, event.window_name, sizeof(event.window_name));
+    event.process_id = GetCurrentProcessId();
+
+    auto pipe = pipe_setup();
+    pipe_write(pipe, &event, sizeof(event));
+    pipe_close(pipe);
+}
+```
+
+Now, we have a functioning log of the focus states! I've omitted the actual logging functions as they are not interesting, but the [full source](https://github.com/wlenig/focusmonitor/tree/master) can be found on GitHub. 
+
+![Screenshot of the FocusMonitor log](focusmonitor_screenshot.png)
+
+And with that, I found the culprit! My mouse manufacturer's was hijacking focus many hundreds of times per second, at seemingly random intervals. Oh well, I really liked my mouse, but I guess that's that. I am relieved, though, that it was not more directly Microsoft's fault, as I long dreaded upgrading to Windows 11, as this phenomenom began not shortly after.
+
+While writing this blog post, I stumbled across a wildly simpler use of the Windows API that achieves essentially the same thing. See my next post for a run down of that, as well as an analysis of the pros and cons to each approach.
