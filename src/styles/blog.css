@@ -1,5 +1,9 @@
 @tailwind base;
 
+li {
+    @apply list-inside;
+}
+
 ul li {
     @apply list-disc;
 }
