@@ -25,7 +25,7 @@ Using `SetWinEventHook`, the first two parameters are the min and max range of e
 
 After the hook is installed, the main thread must enter a message loop. Typically these event loops are used to handle user inputs in graphical applications, however one is required here as Windows messages are the IPC mechanism of use under the hood. By calling `GetMessage` and then `DispatchMethod`, execution blocks until a unit of work arrives, after which it is executed.
 
-The program, minus error handling, can be distilled to the following:
+The program, then, can be distilled to the following:
 
 ```cpp
 WINEVENTPROC handle_event; // forward declaration
