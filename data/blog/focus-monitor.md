@@ -1,222 +1,75 @@
 ---
-title: "Monitoring Focus: A Slice of the Windows API"
-publishDate: 2025-01-09T00:00:00-05:00
+title: "Monitoring Focus: A Slice of Windows API"
+publishDate: 2025-01-13T00:00:00-05:00
 ---
 
-> **Note**: The formatting of the blog, more generally, is still incomplete. Please excuse any missing typographic features (such as bullet points) for the time being.
+Earlier this week, my Windows 11 install began to exhibit a strange behavior: at random intervals, focus was being taken away from the application I was using. Keyboard pressed and mouse clicks would get sent to the desktop, and <kbd>Alt</kbd>+<kbd>Tab</kbd>bing would not return focus anywhere. In these moments, even Explorer was non-responsive. Interestingly, I found locking (<kbd>Win</kbd>+<kbd>L</kbd>) and unlocking the desktop would restore focus and make things interactable once again.
 
-A week ago, focus on my Windows desktop began to spontaneously break: keyboard and mouse inputs would pass through windows straight to the desktop, Explorer would become utter unresponsive, and ocassionally a single process, like Chrome, would become the single interactable component in the system. Interestingly, quickly locking (<kbd>Win</kbd> + <kbd>L</kbd>) and unlocking the desktop would temporarily alleviate the issue.
+Some quick googling led me to Reddit threads of others experiencing the same issue, alleging it to be a Windows 11 bug. Some further googling, and I founder someone had made a tool to debug such an issue! Upon reviewing the code, though, I was dissapointed find it worked by continously polling `GetForegroundWindow`, a method which is both resource-intensive and possibly error-prone, as multiple focus changes that occur faster than the polling interval, for example, can not be reliably detected. Well, that's an enough of an excuse to open MSDN and make my own!
 
-When looking for a tool to debug the issue, particularly where the global focus was even going, I found someone had already made a [one](https://github.com/MoAlyousef/focusmon) to log changes in focus! Upon reviewing it, though, I was dissapointed to see it worked by constantly polling `GetForegroundWindow`, a method which is both resource intensive and also possibly error prone, as focus switches that happen faster than the polling interval, for example, can not be reliably detected. That was the justification I gave myself, at least, to stop looking for other tools, and sit down and write my own.
+Before beginning, it is helpful to outline the two goals of this project:
+1. To log whenever a focus change occurs, including information about which application is gaining focus
+2. To use event listening, or install some hook, such that focus changes cannot be missed
 
-My first thought was to use `SetWindowsHookEx`, and installing a hook to `WndProc`, the function that processes inputs sent to a window. Upon reviewing MSDN, I was pleased to discover there is instead a hook for "computer-based training" applications, a politically correct term for student monitoring software. This hook, `WH_CBT`, is called whenever a window is created, destroyed, focused, or unfocused, and is perfect for this use case.
+To begin, my mind immediately turned to `SetWindowsHookEx`, a function which allows programs to install subroutines into an enumeration of Windows-defined message-handling procedures. Hooks installed this way are loaded into the address space of all running processes via a dynamic-linked library, or DLL, meaning the hook procedures are run within the context of the process they're in. If the goal is to log focus events, then some interprocess communication (IPC) is necessary between focused applications and the hooking one. Additionally, DLLs can only be loaded into processes with the same "bitness" ([Microsoft's own words](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowshookexa?redirectedfrom=MSDN#remarks)), so Windows has a workaround: when trying to hook a 64-bit process with a 32-bit library, for example, an interprocess call back is created, and the hook is then run inside the context of the original hooking application.
 
-I should note: Using `SetWindowsHookEx` is rather precarious, as it maps the hooking DLL into the address space of every process in the system, a behavior neither anti-viruses or anti-cheats are fond of. Additionally, the callback itself gets called in the context of the process that triggered the hook, so some inter-process communication mechanism will be required to log anything. Nevertheless, I decided to give it a shot, using a named pipe to communicate.
+These callbacks are orchestrated via the Windows messages, which is interesting for a few reasons. Firstly: it can be helpful to consider what the operating system itself does when trying to achieve the same thing. Secondly: why can't we just always delegate the responsibility of IPC to Windows, like in the mismatched "bitness" case? Unfortunately, there is no direct way to coerce this behavior out of `SetWindowsHookEx`.
 
-The basic control flow of the program should then be:
-```
-1. Create a named pipe instance
-2. Install the hook (only once!)
-3. Accept a client, read and log the message
-4. Repeat from step 1
-```
+> At this point, I just wanted something that worked, so I wrote [this]() using `SetWindowsHookEx` and named pipes for IPC, due to my familiarity with using them in the past.
 
-In C++, this looks like:
+It turns out, there is another way! `SetWinEventHook`, a higher level hooking API, hits both notes: First, there is an `EVENT_OBJECT_FOCUS` event to listen for, which fires exactly when it sounds like it would. Second, it allows the caller to explicitly specify whether to load the hook in the context of the process firing the event (dubbed an "in context" hook), or to only load it in the hooking process (an "out of context" hook) and do IPC magic on your behalf, so long as the process uses a Windows message loop.
+
+> This "magic" is really just a combination of Windows messages and shared memory.
+
+Using `SetWinEventHook`, the first two parameters are the min and max range of events to receive, in this case just `EVENT_OBJECT_FOCUS`. The next is a handle to the DLL containing the callback, however since we are using an "out of context" hook, it does not need to be specified. The fourth parameter is the callback function itself. The next two arguments are the IDs of the specific process and thread to listen to -- 0 indicates all. The last paramater is a flags value, which indicates whether to the hook ought to be used "in" or "out" of context, among other things.
+
+After the hook is installed, the main thread must enter a message loop. Typically these event loops are used to handle user inputs in graphical applications, however one is required here as Windows messages are the IPC mechanism of use under the hood. By calling `GetMessage` and then `DispatchMethod`, execution blocks until a unit of work arrives, after which it is executed.
+
+The program, minus error handling, can be distilled to the following:
 
 ```cpp
-while (true) {
-    auto pipe = create_instance();
-    static auto hook = install_hook();
-    accept_client(pipe)
+auto hook = SetWinEventHook(
+    EVENT_OBJECT_FOCUS, EVENT_OBJECT_FOCUS,
+    NULL,
+    handle_event,
+    0,
+    0,
+    WINEVENT_OUTOFCONTEXT
+);
+
+MSG msg;
+while (GetMessage(&msg, NULL, 0, 0)) {
+    DispatchMessage(&msg);
 }
+
+UnhookWinEvent(hook);
 ```
 
-First, we create a named pipe instance. We specify the flags `PIPE_TYPE_MESSAGE` and `PIPE_READMODE_MESSAGE` to ensure that messages are read atomically, and `PIPE_WAIT` to block the server until a client connects.
+The callback function `handle_event` follows the `WINEVENTPROC` signature, and uses the handle to the focused window to get information about it before logging.
 
 ```cpp
-auto create_instance() -> HANDLE
-{
-    auto instance = CreateNamedPipe(
-        monitor::PIPE_NAME,
-        PIPE_ACCESS_DUPLEX,
-        PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
-        PIPE_UNLIMITED_INSTANCES,
-        monitor::BUFSIZE,
-        monitor::BUFSIZE,
-        0,
-        NULL
-    );
-
-    if (instance == INVALID_HANDLE_VALUE) {
-        throw std::runtime_error("Failed to create named pipe");
-    }
-
-    return instance;
-}
-```
-
-To install the hook, we first need to load the DLL into memory. Then, we get the exported callback function, and install it using `SetWindowsHookEx`, specifying the hook ID as `WH_CBT`.
-
-```cpp
-auto install_hook() -> HHOOK
-{
-    auto monitor_module = LoadLibrary(L"monitor.dll");
-    if (monitor_module == NULL) {
-        throw std::runtime_error("Failed to load monitor module");
-    }
-
-    auto cbt_proc = (HOOKPROC)GetProcAddress(monitor_module, "CBTProc");
-    if (!cbt_proc) {
-        throw std::runtime_error("Failed to find callback function");
-    }
-
-    return SetWindowsHookEx(WH_CBT, cbt_proc, monitor_module, 0);
-}
-```
-
-Accepting a client is straightforward: we wait for a connection, spawn a thread to read and log the message, and close the connection. Interestingly, `ConnectNamedPipe`, the function that waits for a client to connect, returns false in cases where the connection was succesful but the client was waiting. Thankfully, `GetLastError` will return `ERROR_PIPE_CONNECTED` in this case, indiating all is well.
-
-```cpp
-auto accept_client(HANDLE instance) -> void
-{
-    auto connected = ConnectNamedPipe(instance, NULL)
-        ? TRUE
-        : (GetLastError() == ERROR_PIPE_CONNECTED);
-    
-    if (!connected) {
-        throw std::runtime_error("Failed to connect to named pipe");
-    }
-    
-    DWORD thread_id;
-    auto thread = CreateThread(
-        NULL,
-        0,
-        handle_instance,
-        instance,
-        NULL,
-        &thread_id
-    );
-
-    if (thread == NULL) {
-        throw std::runtime_error("Failed to create thread");
-    }
-
-    CloseHandle(thread);
-}
-```
-
-The thread function is simple: read the message, log it, and close the connection. Because we are using Windows' `CreateThread`, the function must adhere to the `LPTHRAD_START_ROUTINE` signature, which includes returning a `DWORD` and using the `WINAPI` (`__stdcall`) calling convention.
-
-```cpp
-auto WINAPI handle_instance(HANDLE instance) -> DWORD
-{
-    auto event = monitor::FocusEvent{};
-    DWORD read;
-    
-    while (true) {
-        if (ReadFile(
-            instance,
-            &event,
-            sizeof(event),
-            &read,
-            NULL
-        )) {
-            log_focus_event(event);
-        } else {
-            break;
-        }
-    }
-
-    CloseHandle(instance);
-    return 0;
-}
-```
-
-You may observe we are reading a `FocusEvent`, which is defined as follows:
-
-```cpp
-struct FocusEvent {
-    char executable[MAX_PATH];
-    char window_name[MAX_PATH];
-    DWORD process_id;
-};
-```
-
-Moving over to the DLL, or client side, the callback function needs to be defined following the `HOOKPROC` signature, and exported. Inside it, we check if signal code is `HCBT_SETFOCUS`, which indicates a window has gained focus, then write the event to the named pipe. In all cases, we continue the call chain. I should add that it is advised to do as little work inside the callback as possible, however seeing as this is a debugging tool, I found opening and writing to the pipes inside the hook acceptable.
-
-```cpp
-extern "C" __declspec(dllexport) LRESULT CALLBACK CBTProc(
-  int    nCode,
-  WPARAM wParam,
-  LPARAM lParam
+void handle_event(
+    HWINEVENTHOOK hWinEventHook,
+    DWORD event,
+    HWND hwnd, // handle to window being focused
+    LONG idObject,
+    LONG idChild,
+    DWORD idEventThread,
+    DWORD dwmsEventTime
 ) {
-    // wParam is handle to window gaining focus
-    // lParam is handle to window losing focus
-
-    if (nCode == HCBT_SETFOCUS) {
-        write_event((HWND)wParam);
-    }
-
-    return CallNextHookEx(NULL, nCode, wParam, lParam);
+    auto info = get_info(hwnd);
+    log_info(info);
 }
 ```
 
-For opening and writing to the pipe on the client, I define the following convenience functions:
+Here, `get_info` finds the process's PID, opens a handle to it, and gets its name and other appropriate information. Then, `log_info` prints if beautifully. And, voila!
 
-```cpp
-auto pipe_setup()
-{
-    auto pipe = CreateFile(
-        monitor::PIPE_NAME,
-        GENERIC_READ | GENERIC_WRITE,
-        0,
-        NULL,
-        OPEN_EXISTING,
-        0,
-        NULL
-    );
+![A screenshot of FocusMonitor running](focusmonitor_screenshot.png)
 
-    return pipe;
-}
+The full source for this tool, dubbed FocusMonitor, is available [here](https://github.com/wlenig/focusmonitor) on GitHub.
 
-auto pipe_write(HANDLE pipe, void* msg, size_t size)
-{
-    DWORD written;
-    return WriteFile(
-        pipe,
-        msg,
-        size,
-        &written,
-        NULL
-    );
-}
+> I neglected to mention that not long into this journey, I just wanted something that worked. Before discovering `SetWinEventHook`, I naively implemented the whole thing using `SetWindowsHookEx`, a DLL, and named pipes. Windows messages would have been a better choice for IPC, although that's pretty much what the new method is using. The source for this version is also available [here](https://github.com/wlenig/focusmonitor/tree/setwindowshoookex) on GitHub.
 
-auto pipe_close(HANDLE pipe)
-{
-    return CloseHandle(pipe);
-}
-```
+With a new tool at my disposal, it was time to finally investigate the cause of the strange focus bugs. You could not imagine my dissapoint to learn it was my mouse's configuration software misbehaving. Upon removing it, the problem went away, and seems(?) to have stayed away after a fresh install; an anti-climactic ending, I know. At least next time focus begins bugging out, I'll have just the right tool for the job.
 
-Then, sending a `FocusEvent` is as simple as filling the struct, and composing with the aforementioned convenience functions. `GetModuleFileName` with a `NULL` first parameter gets the executable file path, while `GetWindowText` gets the title of the focused window.
-
-```cpp
-auto write_event(HWND focused) -> void
-{
-    auto event = monitor::FocusEvent{};
-    GetModuleFileNameA(NULL, event.executable, sizeof(event.executable));
-    GetWindowTextA(focused, event.window_name, sizeof(event.window_name));
-    event.process_id = GetCurrentProcessId();
-
-    auto pipe = pipe_setup();
-    pipe_write(pipe, &event, sizeof(event));
-    pipe_close(pipe);
-}
-```
-
-Now, we have a functioning log of the focus states! I've omitted the actual logging functions as they are not interesting, but the [full source](https://github.com/wlenig/focusmonitor/tree/master) can be found on GitHub. 
-
-![Screenshot of the FocusMonitor log](focusmonitor_screenshot.png)
-
-And with that, I found the culprit! My mouse manufacturer's was hijacking focus many hundreds of times per second, at seemingly random intervals. Oh well, I really liked my mouse, but I guess that's that. I am relieved, though, that it was not more directly Microsoft's fault, as I long dreaded upgrading to Windows 11, as this phenomenom began not shortly after.
-
-While writing this blog post, I stumbled across a wildly simpler use of the Windows API that achieves essentially the same thing. See my next post for a run down of that, as well as an analysis of the pros and cons to each approach.
+Don't forget to ch
