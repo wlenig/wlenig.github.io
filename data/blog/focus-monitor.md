@@ -66,8 +66,6 @@ Here, `get_info` finds the process's PID, opens a handle to it, and gets its nam
 
 ![A screenshot of FocusMonitor running](focusmonitor_screenshot.png)
 
-The full source for this tool, dubbed FocusMonitor, is available [here](https://github.com/wlenig/focusmonitor) on GitHub.
-
 With a new tool at my disposal, it was time to finally investigate the cause of the strange focus bugs. You could not imagine my dissapoint to learn it was my mouse's configuration software misbehaving. Upon removing it, the problem went away, and seems(?) to have stayed away after a fresh install; an anti-climactic ending, I know. At least next time focus begins bugging out, I'll have just the right tool for the job.
 
-Don't forget to ch
+The full source for this tool, dubbed FocusMonitor, is available [here](https://github.com/wlenig/focusmonitor) on GitHub.
