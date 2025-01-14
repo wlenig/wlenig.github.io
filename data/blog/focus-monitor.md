@@ -68,8 +68,6 @@ Here, `get_info` finds the process's PID, opens a handle to it, and gets its nam
 
 The full source for this tool, dubbed FocusMonitor, is available [here](https://github.com/wlenig/focusmonitor) on GitHub.
 
-> I neglected to mention that not long into this journey, I just wanted something that worked. Before discovering `SetWinEventHook`, I naively implemented the whole thing using `SetWindowsHookEx`, a DLL, and named pipes. Windows messages would have been a better choice for IPC, although that's pretty much what the new method is using. The source for this version is also available [here](https://github.com/wlenig/focusmonitor/tree/setwindowshoookex) on GitHub.
-
 With a new tool at my disposal, it was time to finally investigate the cause of the strange focus bugs. You could not imagine my dissapoint to learn it was my mouse's configuration software misbehaving. Upon removing it, the problem went away, and seems(?) to have stayed away after a fresh install; an anti-climactic ending, I know. At least next time focus begins bugging out, I'll have just the right tool for the job.
 
 Don't forget to ch
