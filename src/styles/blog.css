@@ -1,0 +1,13 @@
+@tailwind base;
+
+ul li {
+    @apply list-disc;
+}
+
+ol li {
+    @apply list-decimal;
+}
+
+kbd {
+    @apply p-[.125rem] border-2 rounded-md;
+}
