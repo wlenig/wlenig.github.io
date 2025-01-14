@@ -28,21 +28,25 @@ After the hook is installed, the main thread must enter a message loop. Typicall
 The program, minus error handling, can be distilled to the following:
 
 ```cpp
-auto hook = SetWinEventHook(
-    EVENT_OBJECT_FOCUS, EVENT_OBJECT_FOCUS,
-    NULL,
-    handle_event,
-    0,
-    0,
-    WINEVENT_OUTOFCONTEXT
-);
+WINEVENTPROC handle_event; // forward declaration
 
-MSG msg;
-while (GetMessage(&msg, NULL, 0, 0)) {
-    DispatchMessage(&msg);
+int main() {
+    auto hook = SetWinEventHook(
+        EVENT_OBJECT_FOCUS, EVENT_OBJECT_FOCUS,
+        NULL,
+        handle_event,
+        0,
+        0,
+        WINEVENT_OUTOFCONTEXT
+    );
+
+    MSG msg;
+    while (GetMessage(&msg, NULL, 0, 0)) {
+        DispatchMessage(&msg);
+    }
+
+    UnhookWinEvent(hook);
 }
-
-UnhookWinEvent(hook);
 ```
 
 The callback function `handle_event` follows the `WINEVENTPROC` signature, and uses the handle to the focused window to get information about it before logging.
@@ -66,6 +70,6 @@ Here, `get_info` finds the process's PID, opens a handle to it, and gets its nam
 
 ![A screenshot of FocusMonitor running](focusmonitor_screenshot.png)
 
-With a new tool at my disposal, it was time to finally investigate the cause of the strange focus bugs. You could not imagine my dissapoint to learn it was my mouse's configuration software misbehaving. Upon removing it, the problem went away, and seems(?) to have stayed away after a fresh install; an anti-climactic ending, I know. At least next time focus begins bugging out, I'll have just the right tool for the job.
+With a new tool at my disposal, it was time to finally investigate the cause of the strange focus bugs. You could not imagine my dissapointment to learn it was my mouse's configuration software misbehaving. Upon removing it, the problem went away, and seems(?) to have stayed away after a fresh install; an anti-climactic ending, I know. At least next time focus begins bugging out, I'll have just the right tool for the job.
 
 The full source for this tool, dubbed FocusMonitor, is available [here](https://github.com/wlenig/focusmonitor) on GitHub.
