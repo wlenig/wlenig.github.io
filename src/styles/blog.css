@@ -31,3 +31,7 @@ blockquote {
 .astro-code {
     @apply p-2 rounded-lg;
 }
+
+img {
+    @apply rounded-lg;
+}
