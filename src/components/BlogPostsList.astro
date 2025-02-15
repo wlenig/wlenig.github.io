@@ -9,7 +9,7 @@ blogPosts.sort((a, b) => b.data.publishDate.valueOf() - a.data.publishDate.value
 
 <ul class="max-w-sm flex flex-col divide-y-2">
     {blogPosts.map(post => (
-        <li class="py-2 flex justify-between">
+        <li class="pb-2 flex justify-between">
             <a href={`/blog/${post.id}`} class="mr-2 text-pretty hover:underline decoration-2">{post.data.title}</a>
             <span class="text-gray-600 flex-shrink-0 text-nowrap">{formatDate(post.data.publishDate)}</span>
         </li>
