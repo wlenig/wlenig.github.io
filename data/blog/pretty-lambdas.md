@@ -84,6 +84,6 @@ And, voila! Now, `lambda` is automagically replaced with λ in the editor, witho
     <source src="/prettylambdas/fixed_hidden_cursor.mp4" type="video/mp4">
 </video>
 
-I thought it might be nice to write some sort of unit tests, but after doing some digging, it seems technically impossible to test the effects of `setDecorators`! Rather, because Microsoft internally tests its effects, they have not publicly exposed the API to test it, [advocating that you should instead write a mock](https://github.com/microsoft/vscode/issues/136164#issuecomment-956027228) and test that instead. Seeing as the extension is relatively simple, I decided to forgo this journey, although when I enhance the extension down the line, I will revisit this.
+I thought it might be nice to write some sort of unit tests, but after doing some digging, it seems technically impossible to test the effects of `setDecorators`! Rather, because Microsoft internally tests its effects, they have not publicly exposed the API to test it, [advocating that you should write a mock](https://github.com/microsoft/vscode/issues/136164#issuecomment-956027228) and test that instead. Seeing as the extension is relatively simple, I decided to forgo this sort of test, although when I enhance the extension down the line, I will revisit it.
 
 The code is available [here](https://github.com/wlenig/pretty-lambdas), and maybe in the future I will publish it to the marketplace.
