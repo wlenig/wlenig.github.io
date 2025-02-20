@@ -1,6 +1,7 @@
 ---
 title: "Monitoring Focus: A Slice of the Windows API"
 publishDate: 2025-01-13T00:00:00-05:00
+description: "Writing a Windows tool to log focus changes"
 ---
 
 Earlier this week, my Windows 11 install began to exhibit a strange behavior: at random intervals, focus was being taken away from the application I was using. Keyboard pressed and mouse clicks would get sent to the desktop, and <kbd>Alt</kbd>+<kbd>Tab</kbd>bing would not return focus anywhere. In these moments, even Explorer was non-responsive. Interestingly, I found locking (<kbd>Win</kbd>+<kbd>L</kbd>) and unlocking the desktop would restore focus and make things interactable once again.

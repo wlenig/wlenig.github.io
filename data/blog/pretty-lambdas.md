@@ -1,6 +1,7 @@
 ---
 title: "Pretty Lambdas in Python"
 publishDate: 2025-02-19T00:00:00-05:00
+description: "Crafting a VSCode extension to visually replace lambda with λ"
 ---
 
 Of the many paradigms formally introduced to me during my time at university, I have found none as consequential as functional programming. Since being dropped headfirst in to [Racket](https://racket-lang.org/) all those years ago, my understanding of programming has forever changed, and so have my tastes.
@@ -69,7 +70,7 @@ This works well enough, however the text cursor become invisible when moving thr
     <source src="/prettylambdas/hidden_cursor.mp4" type="video/mp4">
 </video>
 
-To fix this, I decided it made sense to just drop the styles when the cursor is on top of a `lambda` keyword. This was relatively simple enough, just by filtering matches based on the ranges within `editor.selections` before calling `setDecorations`:
+To fix this, I filtered matches based on the ranges within `editor.selections` before calling `setDecorations`:
 
 ```typescript
 const selections = editor.selections;
