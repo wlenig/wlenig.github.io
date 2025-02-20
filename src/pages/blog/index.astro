@@ -2,9 +2,14 @@
 import BlogPostsList from '../../components/BlogPostsList.astro';
 import Layout from '../../layouts/Layout.astro';
 
+const meta = {
+	title: "Willem's Blog",
+	description: "Willem Lenig's personal blog",
+	type: "website",
+}
 ---
 
-<Layout title={"Willem's Blog"}>
+<Layout meta={meta}>
 	<div class="min-h-dvh flex items-center justify-center p-4">
 		<div class="flex flex-col gap-4">
             <h1 class="text-2xl font-bold">All Posts</h1>
