@@ -2,7 +2,6 @@
 import BlogPostsList from '../components/BlogPostsList.astro';
 import Profile from '../components/Profile.astro';
 import Layout from '../layouts/Layout.astro';
-import "../styles/home.css"
 
 const meta = {
 	title: "Willem's Site",
@@ -11,34 +10,16 @@ const meta = {
 }
 
 ---
-<script>
-	// By setting the container's position manually, we can mantain its original centered position,
-	// while allowing element to grow in size, without vertically shifting the container.
-	function setFixedContainerPosition() {
-		const container = document.querySelector('.centered-container') as HTMLElement;
-		if (!container) return;
-	
-		// Capture the container's initial height
-		const initialHeight = container.offsetHeight;
-		
-		// Calculate the fixed top offset so the container appears centered on first load
-		const fixedTop = (window.innerHeight - initialHeight) / 2;
-		
-		// Update styles
-		container.style.position = 'absolute';
-		container.style.top = fixedTop + 'px';
-		container.style.left = '50%';
-		container.style.transform = 'translateX(-50%)';
-	}
-
-	document.addEventListener('DOMContentLoaded', setFixedContainerPosition);
-</script>
 
 <Layout meta={meta}>
-	<div class="centered-container p-4">
+	<div class="flex min-h-dvh items-center justify-center p-4">
 		<div class="flex flex-col gap-4">
 			<Profile />
-			<BlogPostsList />
+			<div class="relative">
+				<div class="absolute pb-8">
+					<BlogPostsList />
+				</div>
+			</div>
 		</div>
 	</div>
 </Layout>
