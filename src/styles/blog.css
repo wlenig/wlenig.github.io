@@ -32,6 +32,6 @@ blockquote {
     @apply p-2 rounded-lg;
 }
 
-img {
+img, video {
     @apply rounded-lg;
 }

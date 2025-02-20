@@ -65,7 +65,9 @@ async function updateDecorations(editor: vscode.TextEditor) {
 
 This works well enough, however the text cursor become invisible when moving through where the `lambda` keyword used to appear, making editing unclear.
 
-![Text cursor disappearing]()
+<video autoplay loop muted playsinline>
+    <source src="/prettylambdas/hidden_cursor.mp4" type="video/mp4">
+</video>
 
 To fix this, I decided it made sense to just drop the styles when the cursor is on top of a `lambda` keyword. This was relatively simple enough, just by filtering matches based on the ranges within `editor.selections` before calling `setDecorations`:
 
@@ -78,7 +80,9 @@ const filteredMatches = lambdaMatches.filter((match) =>
 
 And, voila! Now, `lambda` is automagically replaced with λ in the editor, without compromising on editibility or portability.
 
-![Replacing lambda keyword with λ]()
+<video autoplay loop muted playsinline>
+    <source src="/prettylambdas/fixed_hidden_cursor.mp4" type="video/mp4">
+</video>
 
 I thought it might be nice to write some sort of unit tests, but after doing some digging, it seems technically impossible to test the effects of `setDecorators`! Rather, because Microsoft internally tests its effects, they have not publicly exposed the API to test it, [advocating that you should instead write a mock](https://github.com/microsoft/vscode/issues/136164#issuecomment-956027228) and test that instead. Seeing as the extension is relatively simple, I decided to forgo this journey, although when I enhance the extension down the line, I will revisit this.
 
