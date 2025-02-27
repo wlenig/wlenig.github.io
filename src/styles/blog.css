@@ -32,6 +32,22 @@ blockquote {
     @apply p-2 rounded-lg;
 }
 
+.astro-code::-webkit-scrollbar {
+    @apply w-2 h-2;
+}
+
+.astro-code::-webkit-scrollbar-thumb {
+    @apply bg-gray-200 rounded-lg;
+}
+
+.astro-code::-webkit-scrollbar-track {
+    @apply bg-gray-100;
+}
+
+.astro-code::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-300;
+}
+
 img, video {
     @apply rounded-lg;
 }

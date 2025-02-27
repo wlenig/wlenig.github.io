@@ -17,5 +17,10 @@ export default defineConfig({
       //   mdi: ['linkedin', 'github', 'email']
       // }
     })
-  ]
+  ],
+  markdown: {
+    shikiConfig: {
+      theme: 'github-light'
+    }
+  }
 });
