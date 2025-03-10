@@ -65,6 +65,7 @@ img, video {
     @apply float-right w-[40%];
     @apply text-gray-500 italic text-sm;
     @apply border-[3px] rounded-lg p-2 m-4 mt-0;
+    @apply leading-relaxed;
 }
 
 @media (max-width: 640px) {
