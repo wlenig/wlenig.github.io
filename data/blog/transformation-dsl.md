@@ -132,6 +132,10 @@ spec = {
     'full_name': (['name.first', 'name.last'], lambda xs: f'{xs[0]} {xs[1]}', str.upper)
 }
 
+apply_mapping(data, spec)
+# {'names': ['John', 'Doe'], 'full_name': 'JOHN DOE'}
+```
+
 To me, this is a much more elegant solution, as well as enables me to write more pythonic code. I find this much easier to read and understand than the glom equivalent, especially as complexity increases. In the future, I look to add more redundancy functionality, such as error handling and default values, but for now, this suits my needs.
 
 In the future, I'll finish writing more comprehensive tests, and publish this to GitHub, and possibly as a PyPI package.
