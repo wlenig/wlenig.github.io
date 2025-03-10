@@ -6,9 +6,11 @@ description: "Writing a Windows tool to log focus changes"
 
 Earlier this week, my Windows 11 install began to exhibit a strange behavior: at random intervals, focus was being taken away from the application I was using. Keyboard pressed and mouse clicks would get sent to the desktop, and <kbd>Alt</kbd>+<kbd>Tab</kbd>bing would not return focus anywhere. In these moments, even Explorer was non-responsive. Interestingly, I found locking (<kbd>Win</kbd>+<kbd>L</kbd>) and unlocking the desktop would restore focus and make things interactable once again.
 
-Some quick googling led me to Reddit threads of others experiencing the same issue, alleging Windows 11 to be at fault. Digging further, I found that someone had made a tool to debug such an issue! Upon reviewing the code, though, I was dissapointed find it worked by continously polling `GetForegroundWindow`, a method which is both resource-intensive and possibly error-prone, as multiple focus changes that occur faster than the polling interval, for example, can not be reliably detected. Well, that's an enough of an excuse to crack open MSDN and make my own!
+<aside>
+MSDN, or the Microsoft Developer Network, was renamed all the way back in 2016 to Microsoft Docs, and again in 2022 to Microsoft Learn. In my heart, though, it will always be MSDN.
+</aside>
 
-> MSDN, or the Microsoft Developer Network, was renamed all the way back in 2016 to Microsoft Docs, and again in 2022 to Microsoft Learn. In my heart, though, it will always be MSDN.
+Some quick googling led me to Reddit threads of others experiencing the same issue, alleging Windows 11 to be at fault. Digging further, I found that someone had made a tool to debug such an issue! Upon reviewing the code, though, I was dissapointed find it worked by continously polling `GetForegroundWindow`, a method which is both resource-intensive and possibly error-prone, as multiple focus changes that occur faster than the polling interval, for example, can not be reliably detected. Well, that's an enough of an excuse to crack open MSDN and make my own!
 
 Before beginning, it is helpful to outline the two goals of this project:
 1. To log whenever a focus change occurs, including information about which application is gaining focus

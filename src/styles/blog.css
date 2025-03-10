@@ -51,3 +51,24 @@ blockquote {
 img, video {
     @apply rounded-lg;
 }
+
+.article-container {
+    @apply container p-4 max-w-2xl mx-auto;
+}
+
+.article-container > :not(aside):not(:last-child) {
+    @apply mb-4;
+    /* @apply px-8; */
+}
+
+.article-container aside {
+    @apply float-right w-[40%];
+    @apply text-gray-500 italic text-sm;
+    @apply border-[3px] rounded-lg p-2 m-4 mt-0;
+}
+
+@media (max-width: 640px) {
+    .article-container aside {
+        @apply float-none w-auto m-0 mb-4;
+    }
+}
