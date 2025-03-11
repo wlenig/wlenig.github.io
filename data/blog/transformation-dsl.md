@@ -1,55 +1,65 @@
 ---
-title: "Minimal Python DSL for Data Transformation"
+title: "Glom-like data transformation DSL"
 publishDate: 2025-03-10T00:00:00-05:00
 description: "Rolling my own domain-specific language in Python for data transformation"
 ---
 
 In the data-processing pipeline I'm working on, transformations are typically remapping data from one schema to another, with a little additional logic thrown in. Typically, I'd use [glom](https://glom.readthedocs.io/en/latest/) for this, a great library for transforming data structures in Python.
 
-Glom is used by defining a specification that describes how to access then transform the data. Tuples define the transformation, with the first elment being the dot-notation path to the value, and subsquent elements being the transformation functions to apply.
+Glom is used by defining a specification that describes how to access then optionally transform the data, then applying the spec to the target dictionary using the `glom` function. As it's somewhat of a data transformation swiss army knife, it is difficult to succintly and completely describe its functionality, but the following examples demonstrate its principal use:
 
 ```python
-from glom import glom
-
-data = {
-    'name': {
-        'first': 'John',
-        'last': 'Doe'
-    }
-}
-
-spec = {
-    'first_name': ('name.first', str.upper),
-    'last_name': 'name.last',
-}
-
-glom(data, spec)
-# {'first_name': 'JOHN', 'last_name': 'Doe'}
+>>> from glom import glom, T
+>>> 
+>>> data = {
+>>>     'name': {
+>>>         'first': 'John',
+>>>         'last': 'Doe'
+>>>     }
+>>> }
+>>> 
+>>> spec = ('name.first', str.upper)
+>>> glom(data, spec)
+'JOHN'
 ```
 
-However, with more complex transformations, glom's syntax becomes a bit cumbersome, sacrificing niceties such as dot-notation. For example, if I were to combine the first and last name using glom, I would to write a specification like this:
+Glom can also be used to transform multiple values at once, using the key-value pairs as key-specification pairs:
 
 ```python
-'name': T['name']['first'] + ' ' + T['name']['last'],
+>>> spec = {
+>>>     'first_name': ('name.first', str.lower),
+>>>     'last_name': 'name.last',
+>>>     'dummy': lambda _: 'foo'
+>>> }
+>>> glom(data, spec)
+{'first_name': 'john', 'last_name': 'Doe', 'dummy': 'foo'}
 ```
 
-Glom's coup de grâce was while I was trying to collect a list of values from within a target dictionary. Using the name example: I had hoped a spec like the following would be possible:
+Take a slightly more complex example, where we want to combine the first first and last names into a single string. To do so, we must use `T`, a special object that allows us to access the target dictionary declaratively. Notice that we sacrifice the one of glom's greatest niceties, dot-notation, to access values:
 
 ```python
-'names': ['name.first', 'name.last']
+T['name']['first'] + ' ' + T['name']['last'],
+```
+
+In my own use, Glom's coup de grâce came while I was trying to collect a list of values from within a target dictionary. Using the name example: I had hoped a spec like the following would be possible:
+
+```python
+['name.first', 'name.last']
 ```
 
 However, glom doesn't support this out of the box, and the closest I could get was to use a lambda function and access the values, almost as if glom didn't exist:
 
 ```python
-'names': lambda data: [data['name']['first'], data['name']['last']]
+lambda data: [data['name']['first'], data['name']['last']]
 ```
 
 Alternatively, I could use glom within the lambda function like so:
 
 ```python
-'names': lambda data: [glom(data, 'name.first'), glom(data, 'name.last')]
+lambda data: [glom(data, 'name.first'), glom(data, 'name.last')]
 ```
+> Note that that you could also make the lambda parameter-less and instead pass `T` into `glom`, although I find that less illustrative.
+
 
 A bit redundant, and ugly, but it works. At this point I had spent enough time pain-stakingly navigating the documentation looking for functionality that I was sure was there, but wasn't, trying to make glom work elegantly for my use case, that I decided to roll my own!
 
@@ -57,12 +67,12 @@ A bit redundant, and ugly, but it works. At this point I had spent enough time p
 
 I love the simple syntax demonstrated by the first example, and wanted to keep that for my implementation. I also wanted to enhance it with the ability to use a list of values, like my hypothetical example above.
 
-I began by defining precisely what a specification could look like. I wanted to allow for the following:
-- A string, which would be the dot-notation path to the value
-- A callable, which would be a function to apply to target dictionary
-- A tuple whose first element is a specification, and the rest, if any are functions to apply to the value
-- A list of specifications, which are evaluated to a list
-- A dictionary, where the keys are keys in the resulting dictionary, and he values are specifications
+I began by strictly defining what a specification is:
+- A string, the dot-notation path to the value
+- A callable, applied to the target dictionary
+- A tuple of specifications
+- A list of specifications, evaluated to a list
+- A dictionary, where the keys are keys in the resulting dictionary, and the values are specifications
 > By using a recursive type definition, a specification both captures the accessing and transformation of data, while also allowing for the specification to be nested, enabling the common use case of resolving to a dictionary.
 
 In the form of a python type hint, this looks like:
@@ -74,7 +84,7 @@ Spec = str \
     | list['Spec'] \
     | dict[any, 'Spec'] \
 ```
-> Note that it is not possible to specify more than one types of variable length tuples in a type hint, so some further documentation is necessary to clarify that all the elements of the tuple after the first are functions to apply to the value.
+> Python 3.10+ union types with the `|` operator are so nice, they look like a grammar definition!
 
 Then, I began implementing the whole thing. Getting values from a dictionary using dot-notation was a simple enough exercise:
 
@@ -102,11 +112,11 @@ def apply_mapping(record: dict, spec: Spec) -> dict:
     elif callable(spec):
         return spec(record)
     
-    # Handle tuple of form (Spec, ...funcs)
+    # Handle tuple of form (Spec...)
     elif isinstance(spec, tuple):
-        result = apply_mapping(record, spec[0])
-        for func in spec[1:]:
-            result = func(result)
+        result = record
+        for s in spec:
+            result = apply_mapping(result, s)
         return result
     
     # Handle list of specs
@@ -129,13 +139,13 @@ And with that, I had a simple DSL for transforming data! I can now use it like s
 ```python
 spec = {
     'names': ['name.first', 'name.last'],
-    'full_name': (['name.first', 'name.last'], lambda xs: f'{xs[0]} {xs[1]}', str.upper)
+    'full_name': (['name.first', 'name.last'], lambda xs: ' '.join(xs), str.upper)
 }
 
 apply_mapping(data, spec)
 # {'names': ['John', 'Doe'], 'full_name': 'JOHN DOE'}
 ```
 
-To me, this is a much more elegant solution, as well as enables me to write more pythonic code. I find this much easier to read and understand than the glom equivalent, especially as complexity increases. In the future, I look to add more redundancy functionality, such as error handling and default values, but for now, this suits my needs.
+To me, this is a much more elegant solution: I find it much easier to read and understand than the glom equivalent, and appreciate how strictly declarative it is.
 
 In the future, I'll finish writing more comprehensive tests, and publish this to GitHub, and possibly as a PyPI package.
