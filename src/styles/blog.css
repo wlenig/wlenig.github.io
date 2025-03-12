@@ -73,3 +73,16 @@ img, video {
         @apply float-none w-auto m-0 mb-4;
     }
 }
+
+table {
+    @apply w-full;
+}
+
+thead {
+    @apply bg-gray-100;
+}
+
+td, th {
+    @apply border-b-2 border-gray-200;
+    @apply p-2;
+}
