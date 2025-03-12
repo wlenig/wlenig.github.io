@@ -1,5 +1,5 @@
 ---
-title: "Glom-like data transformation DSL"
+title: "Implementing a Glom-like Data Transformation DSL"
 publishDate: 2025-03-10T00:00:00-05:00
 description: "Rolling my own domain-specific language in Python for data transformation"
 ---
