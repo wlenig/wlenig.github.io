@@ -4,7 +4,7 @@ publishDate: 2025-03-10T00:00:00-05:00
 description: "Rolling my own domain-specific language in Python for data transformation"
 ---
 
-In the data-processing pipeline I'm working on, transformations are typically remapping data from one schema to another, with a little additional logic thrown in. Typically, I'd use [`glom`](https://glom.readthedocs.io/en/latest/) for this, a great library for transforming data structures in Python.
+In the data-processing pipeline I'm working on, a good chunk of transformations are just restructuring data from one schema to another, with a little additional logic thrown in. Typically, I'd use [`glom`](https://glom.readthedocs.io/en/latest/) for this, a great library for transforming data structures in Python.
 
 `glom` is used by defining a specification that describes how to access then optionally transform the data, then applying the spec to the target dictionary using the `glom` function. As it's somewhat of a data transformation swiss army knife, it is difficult to succintly and completely describe its functionality, but the following examples demonstrate its principal use:
 
