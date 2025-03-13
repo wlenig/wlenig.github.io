@@ -161,7 +161,7 @@ To me, this is a much more elegant solution: I find it much easier to read and u
 
 ## Compiling Down to Lambdas
 
-Because these specifications simply define a series of transformations, like an S-expression, they can be trivially compiled down to a composite function. By doing so, we can avoid the overhead of re-interpreting the specification each time we can apply it, which ought to be a significant performance improvement.
+Because these specifications really define a series of transformations to make, they can be thought of as a simple `reduce` operation, where the record is the initial value, and the specifications are teh functions to apply. We can instead just compile down these specifications into a single composite function, avoiding the overhead of re-interpreting the specification each time we can apply it, which ought to be a significant performance improvement.
 
 The implementation is quite standard, except for chaining tuples together, which required careful consideration of variable capture. The implementation is as follows:
 
@@ -212,6 +212,8 @@ I re-ran my pipeline's integration tests on a real dataset of ~500k rows, and ti
 | Definitional interpreter | 12.11 | 1.0x |
 | Compiled n-times | 15.59 | 0.78x |
 | Compiled once | 9.51 | 1.27x |
+
+> I also tested using `functools.reduce` in the tuples case, but it was slower than the imperative and recursive versions.
 
 As I suspected, compiling every time is slower than interpreting, but compiling once is a significant speedup. Does it justify the extra complexity? At this scale, probably not, but it was a fun exercise nonetheless.
 
