@@ -6,6 +6,7 @@ import react from '@astrojs/react';
 import tailwind from '@astrojs/tailwind';
 
 import icon from 'astro-icon';
+import theme from './data/quietlight-color-theme.json'
 
 // https://astro.build/config
 export default defineConfig({
@@ -20,7 +21,7 @@ export default defineConfig({
   ],
   markdown: {
     shikiConfig: {
-      theme: 'github-light'
+      theme: theme,
     }
   }
 });
