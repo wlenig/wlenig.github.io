@@ -1,0 +1,14 @@
+---
+import SnakeGame from "../components/SnakeGame"
+import Layout from "../layouts/Layout.astro"
+
+const meta = {
+    title: "Arena",
+    description: "Willem's Arena",
+    type: "website"
+}
+---
+
+<Layout meta={meta}>
+    <SnakeGame client:only agents={[]} />
+</Layout>
