@@ -32,6 +32,7 @@ const CELL_SIZE = 20;
 const BOARD_WIDTH = BOARD_SIZE * CELL_SIZE;
 const BOARD_HEIGHT = BOARD_SIZE * CELL_SIZE;
 const STEP_INTERVAL = 200;
+const STARTING_LENGTH = 3;
 
 
 class CircleAgent implements Agent {
@@ -57,6 +58,62 @@ class RandomAgent implements Agent {
         const directions: Direction[] = ["up", "down", "left", "right"];
         const randomIndex = Math.floor(Math.random() * directions.length);
         return directions[randomIndex];
+    }
+}
+
+
+class SimpleAgent implements Agent {
+    getMove(state: GameState, snake_idx: number): Direction {
+        const snake = state.snakes[snake_idx];
+        const head = snake.body[0];
+
+        // find the closest food
+        let closestFood: Point | null = null;
+        let closestDistance = Infinity;
+
+        for (const food of state.foods) {
+            const distance = Math.abs(head.x - food.x) + Math.abs(head.y - food.y);
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestFood = food;
+            }
+        }
+
+        if (!closestFood) return snake.direction;
+
+        // move towards the closest food
+        let wish: Direction | null = null;
+        if (head.x < closestFood.x) wish = "right";
+        if (head.x > closestFood.x) wish = "left";
+        if (head.y < closestFood.y) wish = "down";
+        if (head.y > closestFood.y) wish = "up";
+
+        // check if the move is a 180
+        const opposites = {
+            up: "down",
+            down: "up",
+            left: "right",
+            right: "left",
+        }
+
+        // if the move is a 180, turn away from the nearest wall
+        if (wish === opposites[snake.direction]) {
+            if (wish == "up" || wish == "down") {
+                if (head.x < BOARD_SIZE / 2) {
+                    wish = "right";
+                } else {
+                    wish = "left";
+                }
+            } else {
+                if (head.y < BOARD_SIZE / 2) {
+                    wish = "down";
+                } else {
+                    wish = "up";
+                }
+            }
+        }
+
+        return wish || snake.direction;
     }
 }
 
@@ -120,9 +177,11 @@ export default function SnakeGame(
 
     // setup step to be called
     useEffect(() => {
-        const interval = setInterval(step, STEP_INTERVAL);
+        const interval = setInterval(() => {
+            setGameState((prevState) => step(prevState));
+        }, STEP_INTERVAL);
         return () => clearInterval(interval);
-    }, [gameState]);
+    }, []);
 
     // redraw on every game state change
     useEffect(() => {
@@ -136,6 +195,7 @@ export default function SnakeGame(
             agents.push(new KeyboardAgent());
             agents.push(new CircleAgent());
             agents.push(new RandomAgent());
+            agents.push(new SimpleAgent());
         }
 
         agents.forEach((agent) => {
@@ -143,12 +203,10 @@ export default function SnakeGame(
         });
 
         const initialSnakes: Snake[] = agents.map((_, index) => ({
-            body: [
-                { 
-                    x: Math.floor(BOARD_SIZE / (agents.length + 1)) * (index + 1), 
-                    y: Math.floor(BOARD_SIZE / 2)
-                },
-            ],
+            body: Array.from({ length: STARTING_LENGTH }, (_, i) => ({
+                x: Math.floor(BOARD_SIZE / (agents.length + 1)) * (index + 1),
+                y: Math.floor(BOARD_SIZE / 2),
+            })),
             direction: "up",
             alive: true,
         }))
@@ -161,18 +219,27 @@ export default function SnakeGame(
             foods: initialFoods,
             steps: 0,
         });
+
+        // return cleanup function
+        return () => {
+            agents.forEach((agent) => {
+                agent.teardown && agent.teardown();
+            });
+        }
     }
     
-    function step() {
+    function step(state: GameState): GameState {
+        const newFoods = [...state.foods];
+
         // update snakes
-        const newSnakes = gameState.snakes.map((snake, index) => {
+        const newSnakes = state.snakes.map((snake, index) => {
             // do not update dead snakes
             if (!snake.alive) return snake;
 
             const newSnake = { ...snake };
             
             const agent = agents[index];
-            const move = agent.getMove(gameState, index);
+            const move = agent.getMove(state, index);
 
             // check if the move is valid, apply it if so
             if (isValidTurn(snake.direction, move)) {
@@ -198,49 +265,62 @@ export default function SnakeGame(
                     break;
             }
 
-            // check if the next head position is valid
-            if (isValidPosition(newHead)) {
+            // check if the next head position is valid and not colliding with self
+            if (isValidPosition(newHead) && !isColliding(newHead, newSnake.body)) {
                 // set the new head position
                 newSnake.body.unshift(newHead);
-                newSnake.body.pop();
             } else {
-                // snake hit the wall, mark it as dead
+                // kill it
                 newSnake.alive = false;
+            }
+
+            // if the snake eats food, skip the tail removal
+            // otherwise, remove the tail
+            const foodIndex = newFoods.findIndex((food) => food.x === newHead.x && food.y === newHead.y);
+            if (foodIndex !== -1) {
+                // remove the food from the list
+                newFoods.splice(foodIndex, 1);
+                // add a new food
+                newFoods.push(getNextFoodPosition(state.snakes));
+            } else {
+                // remove the tail
+                newSnake.body.pop();
             }
 
             return newSnake;
         });
 
-        const newFoods = [...gameState.foods];
+        // once all snakes have moved, check for collisions between snakes
+        for (let i = 0; i < newSnakes.length; i++) {
+            const snakeA = newSnakes[i];
+            // skip dead snakes
+            if (!snakeA.alive) continue;
 
-        // if snake head is on food, grow the snake
-        for (const snake of newSnakes) {
-            const head = snake.body[0];
-            
-            // find the food this snake is on
-            const foodIndex = gameState.foods.findIndex(
-                (food) => food.x === head.x && food.y === head.y
-            );
+            for (let j = 0; j < newSnakes.length; j++) {
+                const snakeB = newSnakes[j];
+                // already checked self collision, skip dead snakes
+                if (i === j || !snakeB.alive) continue;
 
-            if (foodIndex === -1) continue;
-
-            // grow the snake
-            snake.body.push({ ...snake.body[snake.body.length - 1] });
-            snake.body[snake.body.length - 1].x = head.x;
-            snake.body[snake.body.length - 1].y = head.y;
-
-            // remove the food
-            newFoods.splice(foodIndex, 1);
-            // add a new food
-            newFoods.push(getNextFoodPosition(gameState.snakes));
+                if (isColliding(snakeA.body[0], snakeB.body)) {
+                    snakeA.alive = false;
+                }
+                if (isColliding(snakeB.body[0], snakeA.body)) {
+                    snakeB.alive = false;
+                }
+            }
         }
 
-        setGameState((prevState) => ({
-            ...prevState,
-            foods: newFoods,
+        // return new state
+        return {
+            ...state,
             snakes: newSnakes,
-            steps: prevState.steps + 1,
-        }));
+            foods: newFoods,
+            steps: state.steps + 1,
+        }
+    }
+
+    function isColliding(head: Point, body: Point[]): boolean {
+        return body.some((segment) => segment.x === head.x && segment.y === head.y);
     }
 
 
@@ -269,24 +349,35 @@ export default function SnakeGame(
 
     function getNextFoodPosition(snakes: Snake[]): Point {
         // get set of occupied positions
-        const occupied = new Set<Point>();
+        // store them as x,y strings instead of pointers to Point objects
+        // to avoid reference issues
+        const occupied = new Set<string>();
         
         snakes.forEach((snake) => {
             snake.body.forEach((segment) => {
-                occupied.add(segment);
+                occupied.add(`${segment.x},${segment.y}`);
             });
         });
 
-        // find a random empty position
-        let position: Point;
-        do {
-            position = {
-                x: Math.floor(Math.random() * BOARD_SIZE),
-                y: Math.floor(Math.random() * BOARD_SIZE),
-            };
-        } while (occupied.has(position));
+        const choices = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, i) => ({
+            x: i % BOARD_SIZE,
+            y: Math.floor(i / BOARD_SIZE),
+        }));
 
-        return position;
+        // filter out occupied positions
+        const availablePositions = choices.filter((pos) => {
+            const key = `${pos.x},${pos.y}`;
+            return !occupied.has(key);
+        });
+
+        // if no available positions, throw an error
+        if (availablePositions.length === 0) {
+            throw new Error("No available positions for food");
+        }
+
+        // pick a random position from available positions
+        const randomIndex = Math.floor(Math.random() * availablePositions.length);
+        return availablePositions[randomIndex];
     }
 
 
@@ -300,18 +391,9 @@ export default function SnakeGame(
     }
 
     function drawSnake(ctx: CanvasRenderingContext2D, snake: Snake, index: number) {
-        // TODO: Use hue rotation for colors
-        switch (index) {
-            case 0:
-                ctx.fillStyle = "green";
-                break;
-            case 1:
-                ctx.fillStyle = "blue";
-                break;
-            case 2:
-                ctx.fillStyle = "purple";
-                break;
-        }
+        // set color based on snake index
+        const colors = ["green", "blue", "purple", "hotpink", "orange"];
+        ctx.fillStyle = colors[index % colors.length];
 
         // draw snake corpse as gray
         if (!snake.alive) {
@@ -341,14 +423,14 @@ export default function SnakeGame(
         // draw the checkered background
         drawCheckeredBackground(ctx);
 
-        // draw the foods
-        gameState.foods.forEach((food) => {
-            drawFood(ctx, food);
-        });
-
         // draw the snakes
         gameState.snakes.forEach((snake, index) => {
             drawSnake(ctx, snake, index);
+        });
+
+        // draw the foods
+        gameState.foods.forEach((food) => {
+            drawFood(ctx, food);
         });
     }
 
