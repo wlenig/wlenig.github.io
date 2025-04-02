@@ -1,38 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import GeminiAgent from "../lib/agents/gemini";
+import GrokAgent from "../lib/agents/grok";
+import ClaudeAgent from "../lib/agents/claude";
+import ChatGPTAgent from "../lib/agents/chatgpt";
 
 
-type Direction = "up" | "down" | "left" | "right";
 
-interface Point {
-    x: number;
-    y: number;
-}
-
-interface Snake {
-    body: Point[];
-    direction: Direction;
-    alive: boolean;
-}
-
-interface GameState {
-    snakes: Snake[];
-    foods: Point[];
-    steps: number;
-}
-
-interface Agent {
-    setup?: () => void;
-    teardown?: () => void;
-    getMove: (state: GameState, snake_idx: number) => Direction;
-}
-
-
-const BOARD_SIZE = 20;
+const BOARD_SIZE = 50;
 const CELL_SIZE = 20;
 const BOARD_WIDTH = BOARD_SIZE * CELL_SIZE;
 const BOARD_HEIGHT = BOARD_SIZE * CELL_SIZE;
-const STEP_INTERVAL = 200;
-const STARTING_LENGTH = 3;
+const STEP_INTERVAL = 5;
+const STARTING_LENGTH = 1;
+const INITIAL_FOODS = 5;
 
 
 class CircleAgent implements Agent {
@@ -193,9 +173,15 @@ export default function SnakeGame(
         if (agents.length === 0) {
             console.warn("No agents provided, using default agent");
             agents.push(new KeyboardAgent());
-            agents.push(new CircleAgent());
+            // agents.push(new CircleAgent());
             agents.push(new RandomAgent());
             agents.push(new SimpleAgent());
+            // agents.push(new snakeAgent());
+            // agents.push(new MySnakeAgent()); // gemini
+            agents.push(new GeminiAgent());
+            agents.push(new GrokAgent());
+            agents.push(new ClaudeAgent());
+            agents.push(ChatGPTAgent);
         }
 
         agents.forEach((agent) => {
@@ -212,7 +198,7 @@ export default function SnakeGame(
         }))
 
         // place food randomly on the board
-        const initialFoods = Array.from({ length: 5 }, () => getNextFoodPosition(initialSnakes));
+        const initialFoods = Array.from({ length: INITIAL_FOODS }, () => getNextFoodPosition(initialSnakes));
 
         setGameState({
             snakes: initialSnakes,
@@ -266,29 +252,35 @@ export default function SnakeGame(
             }
 
             // check if the next head position is valid and not colliding with self
-            if (isValidPosition(newHead) && !isColliding(newHead, newSnake.body)) {
-                // set the new head position
-                newSnake.body.unshift(newHead);
-            } else {
+            if (!isValidPosition(newHead) || isColliding(newHead, newSnake.body)) {
                 // kill it
                 newSnake.alive = false;
-            }
-
-            // if the snake eats food, skip the tail removal
-            // otherwise, remove the tail
-            const foodIndex = newFoods.findIndex((food) => food.x === newHead.x && food.y === newHead.y);
-            if (foodIndex !== -1) {
-                // remove the food from the list
-                newFoods.splice(foodIndex, 1);
-                // add a new food
-                newFoods.push(getNextFoodPosition(state.snakes));
             } else {
-                // remove the tail
-                newSnake.body.pop();
+                // set the new head position
+                newSnake.body.unshift(newHead);
             }
 
             return newSnake;
         });
+
+        for (const snake of newSnakes) {
+            if (!snake.alive) continue;
+
+            const head = snake.body[0];
+            
+            // if the snake eats food, skip the tail removal
+            // otherwise, remove the tail
+            const foodIndex = newFoods.findIndex((food) => food.x === head.x && food.y === head.y);
+            if (foodIndex !== -1) {
+                // remove the food from the list
+                newFoods.splice(foodIndex, 1);
+                // add a new food
+                newFoods.push(getNextFoodPosition(newSnakes));
+            } else {
+                // remove the tail
+                snake.body.pop();
+            }
+        }
 
         // once all snakes have moved, check for collisions between snakes
         for (let i = 0; i < newSnakes.length; i++) {
@@ -395,14 +387,18 @@ export default function SnakeGame(
         const colors = ["green", "blue", "purple", "hotpink", "orange"];
         ctx.fillStyle = colors[index % colors.length];
 
-        // draw snake corpse as gray
+
         if (!snake.alive) {
-            ctx.fillStyle = "gray";
+            // draw with a faded color
+            ctx.globalAlpha = 0.35;
         }
 
         snake.body.forEach((segment) => {
             ctx.fillRect(segment.x * CELL_SIZE, segment.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
         });
+
+        // reset alpha
+        ctx.globalAlpha = 1.0;
     }
 
     function drawFood(ctx: CanvasRenderingContext2D, food: Point) {
