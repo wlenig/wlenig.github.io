@@ -161,7 +161,7 @@ To me, this is a much more elegant solution: I find it much easier to read and u
 
 ## Compiling Down to Lambdas
 
-Because these specifications really define a series of transformations to make, they can be thought of as a simple `reduce` operation, where the record is the initial value, and the specifications are teh functions to apply. We can instead just compile down these specifications into a single composite function, avoiding the overhead of re-interpreting the specification each time we can apply it, which ought to be a significant performance improvement.
+Because these specifications really define a series of transformations to make, they can be thought of as a simple `reduce` operation, where the record is the initial value, and the specifications are the functions to apply. We can instead just compile down these specifications into a single composite function, avoiding the overhead of re-interpreting the specification each time we can apply it, which ought to be a significant performance improvement.
 
 The implementation is quite standard, except for chaining tuples together, which required careful consideration of variable capture. The implementation is as follows:
 
