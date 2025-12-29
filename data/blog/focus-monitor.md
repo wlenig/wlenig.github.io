@@ -4,7 +4,7 @@ publishDate: 2025-01-13T00:00:00-05:00
 description: "Writing a Windows tool to log focus changes"
 ---
 
-Earlier this week, my Windows 11 install began to exhibit a strange behavior: at random intervals, focus was being taken away from the application I was using. Keyboard pressed and mouse clicks would get sent to the desktop, and <kbd>Alt</kbd>+<kbd>Tab</kbd>bing would not return focus anywhere. In these moments, even Explorer was non-responsive. Interestingly, I found locking (<kbd>Win</kbd>+<kbd>L</kbd>) and unlocking the desktop would restore focus and make things interactable once again.
+Earlier this week, my Windows 11 install began to exhibit a strange behavior: at random intervals, focus was being taken away from the application I was using. Keyboard presses and mouse clicks would get sent to the desktop, and <kbd>Alt</kbd>+<kbd>Tab</kbd>bing would not return focus anywhere. In these moments, even Explorer was non-responsive. Interestingly, I found locking (<kbd>Win</kbd>+<kbd>L</kbd>) and unlocking the desktop would restore, making things interactable once again.
 
 <aside>
 MSDN, or the Microsoft Developer Network, was renamed all the way back in 2016 to Microsoft Docs, and again in 2022 to Microsoft Learn. In my heart, though, it will always be MSDN.
@@ -20,7 +20,7 @@ To begin, my mind immediately turned to `SetWindowsHookEx`, a function which all
 
 These callbacks are orchestrated via Windows messages, which could be helpful to consider when manually implementing the same behavior. This also begs the question: Why can't we just always delegate the responsibility of IPC to Windows, like in the mismatched "bitness" case? Unfortunately, there is no direct way to coerce this behavior out of `SetWindowsHookEx`.
 
-> At this point, I just wanted something that worked, so I wrote [this]() using `SetWindowsHookEx` and named pipes for IPC, due to my familiarity with using them in the past.
+> At this point, I just wanted something that worked, so I wrote [this](https://github.com/wlenig/focusmonitor/tree/setwindowshoookex) using `SetWindowsHookEx` and named pipes for IPC, due to my familiarity with using them in the past.
 
 It turns out, there is another way! `SetWinEventHook`, a higher level hooking API, hits both notes: First, there is an `EVENT_OBJECT_FOCUS` event to listen for, which fires exactly when it sounds like it would. Second, it allows the caller to explicitly specify whether to load the hook in the context of the process firing the event (dubbed an "in context" hook), or to only load it in the hooking process (an "out of context" hook) and do IPC magic on your behalf, so long as the process uses a Windows message loop.
 
